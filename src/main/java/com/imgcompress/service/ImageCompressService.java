@@ -302,18 +302,35 @@ public class ImageCompressService {
                 return null;
             }
             
-            int[] cmap = new int[256];
-            System.arraycopy(distinctColors, 0, cmap, 0, distinctColors.length);
+            int numColors = distinctColors.length;
             
-            for (int i = distinctColors.length; i < 256; i++) {
-                cmap[i] = 0;
+            byte[] r = new byte[numColors];
+            byte[] g = new byte[numColors];
+            byte[] b = new byte[numColors];
+            byte[] a = new byte[numColors];
+            
+            boolean hasAlpha = false;
+            
+            for (int i = 0; i < numColors; i++) {
+                int color = distinctColors[i];
+                r[i] = (byte) ((color >> 16) & 0xFF);
+                g[i] = (byte) ((color >> 8) & 0xFF);
+                b[i] = (byte) (color & 0xFF);
+                a[i] = (byte) ((color >> 24) & 0xFF);
+                if (a[i] != (byte) 0xFF) {
+                    hasAlpha = true;
+                }
             }
             
-            int bits = colorCount <= 2 ? 1 : 
-                      colorCount <= 4 ? 2 : 
-                      colorCount <= 16 ? 4 : 8;
+            int bits = numColors <= 2 ? 1 : 
+                      numColors <= 4 ? 2 : 
+                      numColors <= 16 ? 4 : 8;
             
-            return new IndexColorModel(bits, distinctColors.length, cmap, 0, false, -1);
+            if (hasAlpha) {
+                return new IndexColorModel(bits, numColors, r, g, b, a);
+            } else {
+                return new IndexColorModel(bits, numColors, r, g, b);
+            }
         } catch (Exception e) {
             log.warn("创建索引颜色模型失败: {}", e.getMessage());
             return null;
